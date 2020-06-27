@@ -77,11 +77,11 @@ public class ForceProjector extends Block{
         stats.add(BlockStat.boostEffect, phaseRadiusBoost / tilesize, StatUnit.blocks);
     }
 
-    @Override
+		@Override
     public void drawPlace(int x, int y, int rotation, boolean valid){
         super.drawPlace(x, y, rotation, valid);
 
-        Draw.color(this.entity.tile.getTeam().color);
+        Draw.color(player.getTeam().color);
         Lines.stroke(1f);
         Lines.poly(x * tilesize, y * tilesize, 6, radius);
         Draw.color();
