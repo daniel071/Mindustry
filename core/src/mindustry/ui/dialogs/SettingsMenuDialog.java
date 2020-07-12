@@ -292,7 +292,7 @@ public class SettingsMenuDialog extends SettingsDialog{
                 }
             });
 
-						graphics.checkPref("darkness", false, b -> {
+						graphics.checkPref("darkness", true, b -> {
                 if(b){
                     Core.settings.put("renderDarkness", true);
                 }else{
