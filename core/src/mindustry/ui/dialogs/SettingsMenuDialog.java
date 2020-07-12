@@ -292,6 +292,14 @@ public class SettingsMenuDialog extends SettingsDialog{
                 }
             });
 
+						graphics.checkPref("darkness", false, b -> {
+                if(b){
+                    Core.settings.put("renderDarkness", true);
+                }else{
+                    Core.settings.put("renderDarkness", false);
+                }
+            });
+
             graphics.checkPref("borderlesswindow", false, b -> Core.graphics.setUndecorated(b));
 
             Core.graphics.setVSync(Core.settings.getBool("vsync"));
@@ -327,6 +335,13 @@ public class SettingsMenuDialog extends SettingsDialog{
         }
         graphics.checkPref("indicators", true);
         graphics.checkPref("animatedwater", !mobile);
+				graphics.checkPref("fullscreen", false, b -> {
+						if(b){
+								Core.graphics.setFullscreenMode(Core.graphics.getDisplayMode());
+						}else{
+								Core.graphics.setWindowedMode(Core.graphics.getWidth(), Core.graphics.getHeight());
+						}
+				});
         if(Shaders.shield != null){
             graphics.checkPref("animatedshields", !mobile);
         }

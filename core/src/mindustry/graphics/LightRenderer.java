@@ -177,6 +177,30 @@ public class LightRenderer{
         return state.rules.lighting;
     }
 
-    public void draw(){;
+    public void draw(){
+			if(Core.settings.getBool("renderDarkness")){
+        if(buffer.getWidth() != Core.graphics.getWidth()/scaling || buffer.getHeight() != Core.graphics.getHeight()/scaling){
+            buffer.resize(Core.graphics.getWidth()/scaling, Core.graphics.getHeight()/scaling);
+        }
+
+        Draw.color();
+        buffer.begin(Color.clear);
+        Gl.blendEquationSeparate(Gl.funcAdd, Gl.max);
+
+        for(Runnable run : lights){
+            run.run();
+        }
+        Draw.reset();
+        buffer.end();
+        Gl.blendEquationSeparate(Gl.funcAdd, Gl.funcAdd);
+
+        Draw.color();
+        Shaders.light.ambient.set(state.rules.ambientLight);
+        Draw.shader(Shaders.light);
+        Draw.rect(Draw.wrap(buffer.getTexture()), Core.camera.position.x, Core.camera.position.y, Core.camera.width, -Core.camera.height);
+        Draw.shader();
+
+        lights.clear();
+			}
     }
 }
