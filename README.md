@@ -49,4 +49,4 @@ After building, the output .JAR file should be in `/desktop/build/libs/Mindustry
 
 ### Feature Requests
 
-Post feature requests and feedback [here](https://github.com/Anuken/Mindustry-Suggestions/issues/new/choose).
+Post feature requests and feedback [here](https://github.com/daniel071/Mindustry/issues/new/choose).
