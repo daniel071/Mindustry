@@ -3,19 +3,15 @@
 [![Build Status](https://travis-ci.org/Anuken/Mindustry.svg?branch=master)](https://travis-ci.org/Anuken/Mindustry) 
 [![Discord](https://img.shields.io/discord/391020510269669376.svg)](https://discord.gg/mindustry)  
 
-A sandbox tower defense game written in Java.
+This is a custom client of a sandbox tower defense game written in Java. It is based of https://github.com/hellomouse/Mindustry/tree/antigrief and has several extra customisations such as colourful shields and toggleable rendering of ambient light.
 
 _[Trello Board](https://trello.com/b/aE2tcUwF/mindustry-40-plans)_  
 _[Wiki](https://mindustrygame.github.io/wiki)_ 
 
-### Contributing
+## Downloads
+You can find pre-compiled binaries in the [releases page](https://github.com/daniel071/Mindustry/releases). You can also download the source code and compile on your own (see instructions below). 
 
-See [CONTRIBUTING](CONTRIBUTING.md).
-
-### Building
-
-Bleeding-edge live builds are generated automatically for every commit. You can see them [here](https://github.com/Anuken/MindustryBuilds/releases). Old builds might still be on [jenkins](https://jenkins.hellomouse.net/job/mindustry/).
-
+## Building
 If you'd rather compile on your own, follow these instructions.
 First, make sure you have [JDK 8](https://adoptopenjdk.net/) installed. Open a terminal in the root directory, `cd` to the Mindustry folder and run the following commands:
 
@@ -54,17 +50,3 @@ After building, the output .JAR file should be in `/desktop/build/libs/Mindustry
 ### Feature Requests
 
 Post feature requests and feedback [here](https://github.com/Anuken/Mindustry-Suggestions/issues/new/choose).
-
-### Downloads
-
-[<img src="https://static.itch.io/images/badge.svg"
-     alt="Get it on Itch.io"
-     height="60">](https://anuke.itch.io/mindustry)
-
-[<img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png"
-     alt="Get it on Google Play"
-     height="80">](https://play.google.com/store/apps/details?id=io.anuke.mindustry)
-
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/io.anuke.mindustry/)
