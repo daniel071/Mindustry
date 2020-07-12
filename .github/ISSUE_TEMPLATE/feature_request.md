@@ -1,11 +1,12 @@
 ---
 name: Feature request
-about: Do not make a new issue for feature requests! Instead, post in the suggestions
+about: Suggest an idea for this project
   repository. See the README.
 title: ''
-labels: invalid
+labels: ''
 assignees: ''
 
 ---
 
-**Do not make a new issue for feature requests!** Instead, post it in suggestions repository: https://github.com/Anuken/Mindustry-Suggestions/issues/new/choose
+## Feature Request
+###### (What feature would you like to see in this project? Explain why)
