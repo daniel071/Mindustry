@@ -132,7 +132,7 @@ public class Actions {
             return name + " { " +
                     "actor: " + griefWarnings.formatPlayer(actor) + ", " +
                     "tile: " + griefWarnings.formatTile(tile) + ", " +
-                    "previousBlock: " + previousBlock.name + ", " +
+                    "previousBlock: " + (previousBlock == null ? "null" : previousBlock.name) + ", " +
                     "previousRotation: " + previousRotation + ", " +
                     "previousConfig: " + previousConfig + ", " +
                     "timestamp: " + timestamp.toString() + " }";
