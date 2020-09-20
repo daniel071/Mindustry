@@ -163,7 +163,7 @@ public class Bullets implements ContentList{
             width = 6f;
             height = 8f;
             hitEffect = Fx.flakExplosion;
-            splashDamage = 20f;
+            splashDamage = 22f;
             splashDamageRadius = 20f;
             fragBullet = flakGlassFrag;
             fragBullets = 5;
@@ -199,7 +199,7 @@ public class Bullets implements ContentList{
             hitEffect = Fx.flakExplosion;
             splashDamage = 18f;
             splashDamageRadius = 16f;
-            fragBullet = flakGlassFrag;
+            fragBullet = fragGlassFrag;
             fragBullets = 3;
             explodeRange = 20f;
             collidesGround = true;
@@ -240,7 +240,7 @@ public class Bullets implements ContentList{
             explodeRange = 20f;
         }};
 
-        missileExplosive = new MissileBulletType(2.7f, 10){{
+        missileExplosive = new MissileBulletType(3.7f, 10){{
             width = 8f;
             height = 8f;
             shrinkY = 0f;
@@ -248,7 +248,6 @@ public class Bullets implements ContentList{
             splashDamageRadius = 30f;
             splashDamage = 30f;
             ammoMultiplier = 4f;
-            lifetime = 100f;
             hitEffect = Fx.blastExplosion;
             despawnEffect = Fx.blastExplosion;
 
@@ -256,7 +255,7 @@ public class Bullets implements ContentList{
             statusDuration = 60f;
         }};
 
-        missileIncendiary = new MissileBulletType(2.9f, 12){{
+        missileIncendiary = new MissileBulletType(3.7f, 12){{
             frontColor = Pal.lightishOrange;
             backColor = Pal.lightOrange;
             width = 7f;
@@ -266,23 +265,21 @@ public class Bullets implements ContentList{
             homingPower = 0.08f;
             splashDamageRadius = 20f;
             splashDamage = 20f;
-            lifetime = 100f;
             hitEffect = Fx.blastExplosion;
             status = StatusEffects.burning;
         }};
 
-        missileSurge = new MissileBulletType(4.4f, 20){{
+        missileSurge = new MissileBulletType(3.7f, 18){{
             width = 8f;
             height = 8f;
             shrinkY = 0f;
             drag = -0.01f;
-            splashDamageRadius = 28f;
-            splashDamage = 40f;
-            lifetime = 100f;
+            splashDamageRadius = 25f;
+            splashDamage = 25f;
             hitEffect = Fx.blastExplosion;
             despawnEffect = Fx.blastExplosion;
             lightning = 2;
-            lightningLength = 14;
+            lightningLength = 10;
         }};
 
         standardCopper = new BasicBulletType(2.5f, 9){{
@@ -436,6 +433,7 @@ public class Bullets implements ContentList{
             hitSize = 7f;
             lifetime = 18f;
             pierce = true;
+            collidesAir = false;
             statusDuration = 60f * 4;
             shootEffect = Fx.shootSmallFlame;
             hitEffect = Fx.hitFlameSmall;
@@ -450,6 +448,7 @@ public class Bullets implements ContentList{
             hitSize = 7f;
             lifetime = 18f;
             pierce = true;
+            collidesAir = false;
             statusDuration = 60f * 6;
             shootEffect = Fx.shootPyraFlame;
             hitEffect = Fx.hitFlameSmall;

@@ -48,6 +48,12 @@ public abstract class LStatement{
         field(table, value, setter).width(85f);
     }
 
+    protected void row(Table table){
+        if(LCanvas.useRows()){
+            table.row();
+        }
+    }
+
     protected <T> void showSelect(Button b, T[] values, T current, Cons<T> getter, int cols, Cons<Cell> sizer){
         showSelectTable(b, (t, hide) -> {
             ButtonGroup<Button> group = new ButtonGroup<>();
@@ -87,7 +93,13 @@ public abstract class LStatement{
         Core.scene.add(t);
 
         t.update(() -> {
-            if(b.parent == null) return;
+            if(b.parent == null || !b.isDescendantOf(Core.scene.root)){
+                Core.app.post(() -> {
+                    hitter.remove();
+                    t.remove();
+                });
+                return;
+            }
 
             b.localToStageCoordinates(Tmp.v1.set(b.getWidth()/2f, b.getHeight()/2f));
             t.setPosition(Tmp.v1.x, Tmp.v1.y, Align.center);
@@ -95,10 +107,15 @@ public abstract class LStatement{
         });
         t.actions(Actions.alpha(0), Actions.fadeIn(0.3f, Interp.fade));
 
-        hideCons.get(t, hide);
+        t.top().pane(inner -> {
+            inner.top();
+            hideCons.get(inner, hide);
+        }).top();
 
         t.pack();
     }
+
+    public void afterRead(){}
 
     public void write(StringBuilder builder){
         LogicIO.write(this,builder);
@@ -113,6 +130,6 @@ public abstract class LStatement{
     }
 
     public String name(){
-        return getClass().getSimpleName().replace("Statement", "");
+        return Strings.insertSpaces(getClass().getSimpleName().replace("Statement", ""));
     }
 }

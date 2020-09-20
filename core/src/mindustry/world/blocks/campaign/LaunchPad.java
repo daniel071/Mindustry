@@ -50,7 +50,7 @@ public class LaunchPad extends Block{
         bars.add("items", entity -> new Bar(() -> Core.bundle.format("bar.items", entity.items.total()), () -> Pal.items, () -> (float)entity.items.total() / itemCapacity));
     }
 
-    public class LaunchPadEntity extends Building{
+    public class LaunchPadBuild extends Building{
         @Override
         public void draw(){
             super.draw();
@@ -97,7 +97,7 @@ public class LaunchPad extends Block{
             //launch when full and base conditions are met
             if(items.total() >= itemCapacity && efficiency() >= 1f && timer(timerLaunch, launchTime / timeScale)){
                 LaunchPayload entity = LaunchPayload.create();
-                items.each((item, amount) -> entity.stacks().add(new ItemStack(item, amount)));
+                items.each((item, amount) -> entity.stacks.add(new ItemStack(item, amount)));
                 entity.set(this);
                 entity.lifetime(120f);
                 entity.team(team);
@@ -142,7 +142,7 @@ public class LaunchPad extends Block{
             Draw.z(Layer.weather - 1);
 
             TextureRegion region = Core.atlas.find("launchpod");
-            float rw = region.getWidth() * Draw.scl * scale, rh = region.getHeight() * Draw.scl * scale;
+            float rw = region.width * Draw.scl * scale, rh = region.height * Draw.scl * scale;
 
             Draw.alpha(alpha);
             Draw.rect(region, cx, cy, rw, rh, rotation);
@@ -174,9 +174,14 @@ public class LaunchPad extends Block{
 
         @Override
         public void remove(){
+            if(!state.isCampaign()) return;
+
+            //on multiplayer the destination is a the first captured sector (basically random)
+            Sector destsec = !net.client() ? state.secinfo.origin : state.rules.sector.planet.sectors.find(Sector::hasBase);
+
             //actually launch the items upon removal
-            if(team() == state.rules.defaultTeam && state.secinfo.origin != null){
-                ItemSeq dest = state.secinfo.origin.getExtraItems();
+            if(team() == state.rules.defaultTeam && destsec != null){
+                ItemSeq dest = destsec.getExtraItems();
 
                 for(ItemStack stack : stacks){
                     dest.add(stack);
@@ -186,7 +191,7 @@ public class LaunchPad extends Block{
                     Events.fire(new LaunchItemEvent(stack));
                 }
 
-                state.secinfo.origin.setExtraItems(dest);
+                destsec.setExtraItems(dest);
             }
         }
     }

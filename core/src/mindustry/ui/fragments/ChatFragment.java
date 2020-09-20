@@ -57,12 +57,12 @@ public class ChatFragment extends Table{
                 }
             }
 
-            return net.active();
+            return net.active() && ui.hudfrag.shown();
         });
 
         update(() -> {
 
-            if(net.active() && input.keyTap(Binding.chat) && (scene.getKeyboardFocus() == chatfield || scene.getKeyboardFocus() == null || ui.minimapfrag.shown())){
+            if(net.active() && input.keyTap(Binding.chat) && (scene.getKeyboardFocus() == chatfield || scene.getKeyboardFocus() == null || ui.minimapfrag.shown()) && !ui.scriptfrag.shown()){
                 toggle();
             }
 

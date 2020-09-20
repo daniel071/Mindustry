@@ -11,7 +11,6 @@ import arc.util.*;
 import arc.util.io.*;
 import arc.util.pooling.*;
 import mindustry.gen.*;
-import mindustry.net.*;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
 import mindustry.world.*;
@@ -29,9 +28,9 @@ public class MessageBlock extends Block{
         solid = true;
         destructible = true;
 
-        config(String.class, (MessageBlockEntity tile, String text) -> {
-            if(net.server() && text.length() > maxTextLength){
-                throw new ValidateException(player, "Player has gone above text limit.");
+        config(String.class, (MessageBuild tile, String text) -> {
+            if(text.length() > maxTextLength){
+                return; //no.
             }
 
             tile.message.ensureCapacity(text.length());
@@ -53,7 +52,7 @@ public class MessageBlock extends Block{
         });
     }
 
-    public class MessageBlockEntity extends Building{
+    public class MessageBuild extends Building{
         public StringBuilder message = new StringBuilder();
 
         @Override

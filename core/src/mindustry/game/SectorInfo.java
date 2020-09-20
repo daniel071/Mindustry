@@ -2,9 +2,10 @@ package mindustry.game;
 
 import arc.math.*;
 import arc.struct.*;
-import arc.util.*;
 import arc.util.ArcAnnotate.*;
+import arc.util.*;
 import mindustry.content.*;
+import mindustry.ctype.*;
 import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.blocks.storage.CoreBlock.*;
@@ -32,6 +33,8 @@ public class SectorInfo{
     public boolean hasCore = true;
     /** Sector that was launched from. */
     public @Nullable Sector origin;
+    /** Resources known to occur at this sector. */
+    public Seq<UnlockableContent> resources = new Seq<>();
     /** Time spent at this sector. Do not use unless you know what you're doing. */
     public transient float internalTimeSpent;
 
@@ -64,7 +67,7 @@ public class SectorInfo{
         //update core items
         coreItems.clear();
 
-        CoreEntity entity = state.rules.defaultTeam.core();
+        CoreBuild entity = state.rules.defaultTeam.core();
 
         if(entity != null){
             ItemModule items = entity.items;
@@ -84,12 +87,10 @@ public class SectorInfo{
     /** Update averages of various stats, updates some special sector logic.
      * Called every frame. */
     public void update(){
-        internalTimeSpent += Time.delta;
+        //updating in multiplayer as a client doesn't make sense
+        if(net.client()) return;
 
-        //time spent exceeds turn duration!
-        if(internalTimeSpent >= turnDuration && internalTimeSpent - Time.delta < turnDuration){
-            universe.displayTimeEnd();
-        }
+        internalTimeSpent += Time.delta;
 
         //create last stored core items
         if(lastCoreItems == null){
@@ -97,7 +98,7 @@ public class SectorInfo{
             updateCoreDeltas();
         }
 
-        CoreEntity ent = state.rules.defaultTeam.core();
+        CoreBuild ent = state.rules.defaultTeam.core();
 
         //refresh throughput
         if(time.get(refreshPeriod)){
@@ -141,7 +142,7 @@ public class SectorInfo{
     }
 
     private void updateCoreDeltas(){
-        CoreEntity ent = state.rules.defaultTeam.core();
+        CoreBuild ent = state.rules.defaultTeam.core();
         for(int i = 0; i < lastCoreItems.length; i++){
             lastCoreItems[i] = ent == null ? 0 : ent.items.get(i);
         }

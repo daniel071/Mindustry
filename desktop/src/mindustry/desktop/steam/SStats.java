@@ -51,7 +51,7 @@ public class SStats implements SteamUserStatsCallback{
         this.updated = true;
     }
 
-    private void checkUpdate(){
+    void checkUpdate(){
         if(campaign()){
             SStat.maxUnitActive.max(Groups.unit.count(t -> t.team() == player.team()));
 
@@ -65,7 +65,7 @@ public class SStats implements SteamUserStatsCallback{
             }
 
             for(Building entity : player.team().cores()){
-                if(!content.items().contains(i -> entity.items.get(i) < entity.block().itemCapacity)){
+                if(!content.items().contains(i -> entity.items.get(i) < entity.block.itemCapacity)){
                     fillCoreAllCampaign.complete();
                     break;
                 }
@@ -87,11 +87,11 @@ public class SStats implements SteamUserStatsCallback{
         });
 
         //TODO achievement invalid
-        Events.on(ZoneConfigureCompleteEvent.class, e -> {
+        //Events.on(ZoneConfigureCompleteEvent.class, e -> {
             //if(!content.sectors().contains(z -> !z.canConfigure())){
             //    configAllZones.complete();
             //}
-        });
+        //});
 
         Events.run(Trigger.newGame, () -> Core.app.post(() -> {
             if(campaign() && player.core() != null && player.core().items.total() >= 10 * 1000){
@@ -109,7 +109,7 @@ public class SStats implements SteamUserStatsCallback{
             if(campaign() && e.unit != null && e.unit.isLocal() && !e.breaking){
                 SStat.blocksBuilt.add();
 
-                if(e.tile.block() == Blocks.router && e.tile.build.proximity().contains(t -> t.block() == Blocks.router)){
+                if(e.tile.block() == Blocks.router && e.tile.build.proximity().contains(t -> t.block == Blocks.router)){
                     chainRouters.complete();
                 }
 

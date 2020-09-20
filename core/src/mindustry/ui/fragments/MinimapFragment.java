@@ -16,7 +16,7 @@ import static mindustry.Vars.*;
 
 public class MinimapFragment extends Fragment{
     private boolean shown;
-    private float panx, pany, zoom = 1f, lastZoom = -1;
+    float panx, pany, zoom = 1f, lastZoom = -1;
     private float baseSize = Scl.scl(5f);
     private Element elem;
 
@@ -32,7 +32,7 @@ public class MinimapFragment extends Fragment{
 
             if(renderer.minimap.getTexture() != null){
                 Draw.color();
-                float ratio = (float)renderer.minimap.getTexture().getHeight() / renderer.minimap.getTexture().getWidth();
+                float ratio = (float)renderer.minimap.getTexture().height / renderer.minimap.getTexture().getWidth();
                 TextureRegion reg = Draw.wrap(renderer.minimap.getTexture());
                 Draw.rect(reg, w/2f + panx*zoom, h/2f + pany*zoom, size, size * ratio);
                 renderer.minimap.drawEntities(w/2f + panx*zoom - size/2f, h/2f + pany*zoom - size/2f * ratio, size, size * ratio, zoom, true);
@@ -113,7 +113,7 @@ public class MinimapFragment extends Fragment{
     public void toggle(){
         if(Core.settings.getBool("mapcenter")){
             float size = baseSize * zoom * world.width();
-            float ratio = (float)renderer.minimap.getTexture().getHeight() / renderer.minimap.getTexture().getWidth();
+            float ratio = (float)renderer.minimap.getTexture().height / renderer.minimap.getTexture().getWidth();
             panx = (size/2f - player.x() / (world.width() * tilesize) * size) / zoom;
             pany = (size*ratio/2f - player.y() / (world.height() * tilesize) * size*ratio) / zoom;
         }

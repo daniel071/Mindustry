@@ -3,32 +3,40 @@ package mindustry.logic;
 import arc.struct.*;
 import arc.util.ArcAnnotate.*;
 import arc.util.*;
+import arc.util.noise.*;
 import mindustry.*;
 import mindustry.ctype.*;
 import mindustry.entities.*;
 import mindustry.game.*;
 import mindustry.gen.*;
 import mindustry.world.blocks.logic.LogicDisplay.*;
+import mindustry.world.blocks.logic.MemoryBlock.*;
 import mindustry.world.blocks.logic.MessageBlock.*;
 
 import static mindustry.Vars.*;
 
 public class LExecutor{
+    public static final int maxInstructions = 1000;
+
+    //for noise operations
+    public static final Simplex noise = new Simplex();
+
     //special variables
     public static final int
         varCounter = 0,
         varTime = 1;
 
     public static final int
-        maxGraphicsBuffer = 512,
+        maxGraphicsBuffer = 256,
+        maxDisplayBuffer = 1024,
         maxTextBuffer = 256;
 
-    public double[] memory = {};
     public LInstruction[] instructions = {};
     public Var[] vars = {};
 
     public LongSeq graphicsBuffer = new LongSeq();
     public StringBuilder textBuffer = new StringBuilder();
+    public Building[] links = {};
 
     public boolean initialized(){
         return instructions != null && vars != null && instructions.length > 0;
@@ -40,15 +48,16 @@ public class LExecutor{
         vars[varTime].numval = Time.millis();
 
         //reset to start
-        if(vars[varCounter].numval >= instructions.length) vars[varCounter].numval = 0;
+        if(vars[varCounter].numval >= instructions.length
+            || vars[varCounter].numval < 0) vars[varCounter].numval = 0;
 
         if(vars[varCounter].numval < instructions.length){
             instructions[(int)(vars[varCounter].numval++)].run(this);
         }
     }
 
-    public void load(String data){
-        load(LAssembler.assemble(data));
+    public void load(String data, int maxInstructions){
+        load(LAssembler.assemble(data, maxInstructions));
     }
 
     /** Loads with a specified assembler. Resets all variables. */
@@ -74,31 +83,31 @@ public class LExecutor{
 
     //region utility
 
-    @Nullable Building building(int index){
+    public @Nullable Building building(int index){
         Object o = vars[index].objval;
         return vars[index].isobj && o instanceof Building ? (Building)o : null;
     }
 
-    @Nullable Object obj(int index){
+    public @Nullable Object obj(int index){
         Object o = vars[index].objval;
         return vars[index].isobj ? o : null;
     }
 
-    boolean bool(int index){
+    public boolean bool(int index){
         Var v = vars[index];
         return v.isobj ? v.objval != null : Math.abs(v.numval) >= 0.00001;
     }
 
-    double num(int index){
+    public double num(int index){
         Var v = vars[index];
-        return v.isobj ? 1 : v.numval;
+        return v.isobj ? v.objval != null ? 1 : 0 : v.numval;
     }
 
-    int numi(int index){
+    public int numi(int index){
         return (int)num(index);
     }
 
-    void setnum(int index, double value){
+    public void setnum(int index, double value){
         Var v = vars[index];
         if(v.constant) return;
         v.numval = value;
@@ -106,7 +115,7 @@ public class LExecutor{
         v.isobj = false;
     }
 
-    void setobj(int index, Object value){
+    public void setobj(int index, Object value){
         Var v = vars[index];
         if(v.constant) return;
         v.objval = value;
@@ -161,12 +170,32 @@ public class LExecutor{
         }
     }
 
-    public static class ReadI implements LInstruction{
-        public int from, to;
+    public static class GetLinkI implements LInstruction{
+        public int output, index;
 
-        public ReadI(int from, int to){
-            this.from = from;
-            this.to = to;
+        public GetLinkI(int output, int index){
+            this.index = index;
+            this.output = output;
+        }
+
+        public GetLinkI(){
+        }
+
+        @Override
+        public void run(LExecutor exec){
+            int address = exec.numi(index);
+
+            exec.setobj(output, address >= 0 && address < exec.links.length ? exec.links[address] : null);
+        }
+    }
+
+    public static class ReadI implements LInstruction{
+        public int target, position, output;
+
+        public ReadI(int target, int position, int output){
+            this.target = target;
+            this.position = position;
+            this.output = output;
         }
 
         public ReadI(){
@@ -174,18 +203,24 @@ public class LExecutor{
 
         @Override
         public void run(LExecutor exec){
-            int address = exec.numi(from);
+            int address = exec.numi(position);
+            Building from = exec.building(target);
 
-            exec.setnum(to,address < 0 || address >= exec.memory.length ? 0 : exec.memory[address]);
+            if(from instanceof MemoryBuild){
+                MemoryBuild mem = (MemoryBuild)from;
+
+                exec.setnum(output, address < 0 || address >= mem.memory.length ? 0 : mem.memory[address]);
+            }
         }
     }
 
     public static class WriteI implements LInstruction{
-        public int from, to;
+        public int target, position, value;
 
-        public WriteI(int from, int to){
-            this.from = from;
-            this.to = to;
+        public WriteI(int target, int position, int value){
+            this.target = target;
+            this.position = position;
+            this.value = value;
         }
 
         public WriteI(){
@@ -193,10 +228,16 @@ public class LExecutor{
 
         @Override
         public void run(LExecutor exec){
-            int address = exec.numi(to);
+            int address = exec.numi(position);
+            Building from = exec.building(target);
 
-            if(address >= 0 && address < exec.memory.length){
-                exec.memory[address] = exec.num(from);
+            if(from instanceof MemoryBuild){
+                MemoryBuild mem = (MemoryBuild)from;
+
+                if(address >= 0 && address < mem.memory.length){
+                    mem.memory[address] = exec.num(value);
+                }
+
             }
         }
     }
@@ -218,18 +259,24 @@ public class LExecutor{
             Object target = exec.obj(from);
             Object sense = exec.obj(type);
 
-            double output = 0;
-
             if(target instanceof Senseable){
+                Senseable se = (Senseable)target;
                 if(sense instanceof Content){
-                    output = ((Senseable)target).sense(((Content)sense));
+                    exec.setnum(to, se.sense(((Content)sense)));
                 }else if(sense instanceof LAccess){
-                    output = ((Senseable)target).sense(((LAccess)sense));
+                    Object objOut = se.senseObject((LAccess)sense);
+
+                    if(objOut == Senseable.noSensed){
+                        //numeric output
+                        exec.setnum(to, se.sense((LAccess)sense));
+                    }else{
+                        //object output
+                        exec.setobj(to, objOut);
+                    }
                 }
+            }else{
+                exec.setnum(to, 0);
             }
-
-            exec.setnum(to, output);
-
         }
     }
 
@@ -291,11 +338,15 @@ public class LExecutor{
                 }
 
                 exec.setobj(output, targeted);
+            }else{
+                exec.setobj(output, null);
             }
         }
 
         void find(Building b, float range, int sortDir, Team team){
             Units.nearby(team, b.x, b.y, range, u -> {
+                if(!u.within(b, range)) return;
+
                 boolean valid =
                     target1.func.get(b.team, u) &&
                     target2.func.get(b.team, u) &&
@@ -340,40 +391,36 @@ public class LExecutor{
         }
     }
 
-    public static class BinaryOpI implements LInstruction{
-        public BinaryOp op = BinaryOp.add;
+    public static class OpI implements LInstruction{
+        public LogicOp op = LogicOp.add;
         public int a, b, dest;
 
-        public BinaryOpI(BinaryOp op, int a, int b, int dest){
+        public OpI(LogicOp op, int a, int b, int dest){
             this.op = op;
             this.a = a;
             this.b = b;
             this.dest = dest;
         }
 
-        BinaryOpI(){}
+        OpI(){}
 
         @Override
         public void run(LExecutor exec){
-            exec.setnum(dest, op.function.get(exec.num(a), exec.num(b)));
-        }
-    }
+            if(op.unary){
+                exec.setnum(dest, op.function1.get(exec.num(a)));
+            }else{
+                Var va = exec.vars[a];
+                Var vb = exec.vars[b];
 
-    public static class UnaryOpI implements LInstruction{
-        public UnaryOp op = UnaryOp.negate;
-        public int value, dest;
+                if(op.objFunction2 != null && (va.isobj || vb.isobj)){
+                    //use object function if provided, and one of the variables is an object
+                    exec.setnum(dest, op.objFunction2.get(exec.obj(a), exec.obj(b)));
+                }else{
+                    //otherwise use the numeric function
+                    exec.setnum(dest, op.function2.get(exec.num(a), exec.num(b)));
+                }
 
-        public UnaryOpI(UnaryOp op, int value, int dest){
-            this.op = op;
-            this.value = value;
-            this.dest = dest;
-        }
-
-        UnaryOpI(){}
-
-        @Override
-        public void run(LExecutor exec){
-            exec.setnum(dest, op.function.get(exec.num(value)));
+            }
         }
     }
 
@@ -393,9 +440,9 @@ public class LExecutor{
     public static class DrawI implements LInstruction{
         public byte type;
         public int target;
-        public int x, y, p1, p2, p3;
+        public int x, y, p1, p2, p3, p4;
 
-        public DrawI(byte type, int target, int x, int y, int p1, int p2, int p3){
+        public DrawI(byte type, int target, int x, int y, int p1, int p2, int p3, int p4){
             this.type = type;
             this.target = target;
             this.x = x;
@@ -403,6 +450,7 @@ public class LExecutor{
             this.p1 = p1;
             this.p2 = p2;
             this.p3 = p3;
+            this.p4 = p4;
         }
 
         public DrawI(){
@@ -415,7 +463,7 @@ public class LExecutor{
 
             //add graphics calls, cap graphics buffer size
             if(exec.graphicsBuffer.size < maxGraphicsBuffer){
-                exec.graphicsBuffer.add(DisplayCmd.get(type, exec.numi(x), exec.numi(y), exec.numi(p1), exec.numi(p2), exec.numi(p3)));
+                exec.graphicsBuffer.add(DisplayCmd.get(type, exec.numi(x), exec.numi(y), exec.numi(p1), exec.numi(p2), exec.numi(p3), exec.numi(p4)));
             }
         }
     }
@@ -436,10 +484,12 @@ public class LExecutor{
             if(Vars.headless) return;
 
             Building build = exec.building(target);
-            if(build instanceof LogicDisplayEntity){
-                LogicDisplayEntity d = (LogicDisplayEntity)build;
-                for(int i = 0; i < exec.graphicsBuffer.size; i++){
-                    d.commands.addLast(exec.graphicsBuffer.items[i]);
+            if(build instanceof LogicDisplayBuild){
+                LogicDisplayBuild d = (LogicDisplayBuild)build;
+                if(d.commands.size + exec.graphicsBuffer.size < maxDisplayBuffer){
+                    for(int i = 0; i < exec.graphicsBuffer.size; i++){
+                        d.commands.addLast(exec.graphicsBuffer.items[i]);
+                    }
                 }
                 exec.graphicsBuffer.clear();
             }
@@ -463,7 +513,13 @@ public class LExecutor{
             //this should avoid any garbage allocation
             Var v = exec.vars[value];
             if(v.isobj && value != 0){
-                String strValue = v.objval instanceof String ? (String)v.objval : v.objval == null ? "null" : "[object]";
+                String strValue =
+                    v.objval == null ? "null" :
+                    v.objval instanceof String ? (String)v.objval :
+                    v.objval instanceof Content ? "[content]" :
+                    v.objval instanceof Building ? "[building]" :
+                    v.objval instanceof Unit ? "[unit]" :
+                    "[object]";
 
                 exec.textBuffer.append(strValue);
             }else{
@@ -491,8 +547,8 @@ public class LExecutor{
         public void run(LExecutor exec){
 
             Building build = exec.building(target);
-            if(build instanceof MessageBlockEntity){
-                MessageBlockEntity d = (MessageBlockEntity)build;
+            if(build instanceof MessageBuild){
+                MessageBuild d = (MessageBuild)build;
 
                 d.message.setLength(0);
                 d.message.append(exec.textBuffer, 0, Math.min(exec.textBuffer.length(), maxTextBuffer));
@@ -518,27 +574,22 @@ public class LExecutor{
 
         @Override
         public void run(LExecutor exec){
-            if(address != -1 && op.function.get(exec.num(value), exec.num(compare))){
-                exec.vars[varCounter].numval = address;
+            if(address != -1){
+                Var va = exec.vars[value];
+                Var vb = exec.vars[compare];
+                boolean cmp = false;
+
+                if(op.objFunction != null && (va.isobj || vb.isobj)){
+                    //use object function if provided, and one of the variables is an object
+                    cmp = op.objFunction.get(exec.obj(value), exec.obj(compare));
+                }else{
+                    cmp = op.function.get(exec.num(value), exec.num(compare));
+                }
+
+                if(cmp){
+                    exec.vars[varCounter].numval = address;
+                }
             }
-        }
-    }
-
-    public static class GetBuildI implements LInstruction{
-        public int dest;
-        public int x, y;
-
-        public GetBuildI(int dest, int x, int y){
-            this.dest = dest;
-            this.x = x;
-            this.y = y;
-        }
-
-        GetBuildI(){}
-
-        @Override
-        public void run(LExecutor exec){
-            exec.setobj(dest, Vars.world.build(exec.numi(x), exec.numi(y)));
         }
     }
 

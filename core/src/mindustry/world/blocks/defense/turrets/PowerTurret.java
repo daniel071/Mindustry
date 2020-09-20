@@ -22,11 +22,18 @@ public class PowerTurret extends Turret{
 
     @Override
     public void init(){
-        consumes.powerCond(powerUse, entity -> ((TurretEntity)entity).target != null);
+        consumes.powerCond(powerUse, (TurretBuild entity) -> entity.target != null || (entity.logicControlled() && entity.logicShooting));
         super.init();
     }
 
-    public class PowerTurretEntity extends TurretEntity{
+    public class PowerTurretBuild extends TurretBuild{
+
+        @Override
+        public void updateTile(){
+            unit.ammo(power.status * unit.type().ammoCapacity);
+
+            super.updateTile();
+        }
 
         @Override
         public BulletType useAmmo(){

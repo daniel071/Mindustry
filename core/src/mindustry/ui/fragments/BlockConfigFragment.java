@@ -12,8 +12,8 @@ import mindustry.gen.*;
 import static mindustry.Vars.*;
 
 public class BlockConfigFragment extends Fragment{
-    private Table table = new Table();
-    private Building configTile;
+    Table table = new Table();
+    Building configTile;
 
     @Override
     public void build(Group parent){
@@ -61,7 +61,7 @@ public class BlockConfigFragment extends Fragment{
                 }
 
                 table.setOrigin(Align.center);
-                if(configTile == null || configTile.block() == Blocks.air || !configTile.isValid()){
+                if(configTile == null || configTile.block == Blocks.air || !configTile.isValid()){
                     hideConfig();
                 }else{
                     configTile.updateTableAlign(table);

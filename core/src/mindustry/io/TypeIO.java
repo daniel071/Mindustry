@@ -49,7 +49,6 @@ public class TypeIO{
         }else if(object instanceof String){
             write.b((byte)4);
             writeString(write, (String)object);
-            writeString(write, (String)object);
         }else if(object instanceof Content){
             Content map = (Content)object;
             write.b((byte)5);
@@ -89,6 +88,13 @@ public class TypeIO{
         }else if(object instanceof LAccess){
             write.b((byte)13);
             write.s(((LAccess)object).ordinal());
+        }else if(object instanceof byte[]){
+            write.b((byte)14);
+            write.i(((byte[])object).length);
+            write.b((byte[])object);
+        }else if(object instanceof UnitCommand){
+            write.b((byte)15);
+            write.b(((UnitCommand)object).ordinal());
         }else{
             throw new IllegalArgumentException("Unknown object type: " + object.getClass());
         }
@@ -112,6 +118,8 @@ public class TypeIO{
             case 11: return read.d();
             case 12: return world.build(read.i());
             case 13: return LAccess.all[read.s()];
+            case 14: int blen = read.i(); byte[] bytes = new byte[blen]; read.b(bytes); return bytes;
+            case 15: return UnitCommand.all[read.b()];
             default: throw new IllegalArgumentException("Unknown object type: " + type);
         }
     }
@@ -223,7 +231,7 @@ public class TypeIO{
         if(!request.breaking){
             write.s(request.block.id);
             write.b((byte)request.rotation);
-            write.b(request.hasConfig ? (byte)1 : 0);
+            write.b(1); //always has config
             writeObject(write, request.config);
         }
     }
@@ -246,8 +254,9 @@ public class TypeIO{
             boolean hasConfig = read.b() == 1;
             Object config = readObject(read);
             currentRequest = new BuildPlan(Point2.x(position), Point2.y(position), rotation, content.block(block));
+            //should always happen, but is kept for legacy reasons just in case
             if(hasConfig){
-                currentRequest.configure(config);
+                currentRequest.config = config;
             }
         }
 

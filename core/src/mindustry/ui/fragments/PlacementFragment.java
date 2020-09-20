@@ -22,6 +22,8 @@ import mindustry.input.*;
 import mindustry.type.*;
 import mindustry.ui.*;
 import mindustry.world.*;
+import mindustry.world.blocks.*;
+import mindustry.world.blocks.ConstructBlock.*;
 
 import static mindustry.Vars.*;
 
@@ -29,7 +31,7 @@ public class PlacementFragment extends Fragment{
     final int rowWidth = 4;
 
     public Category currentCategory = Category.distribution;
-    Seq<Block> returnArray = new Seq<>();
+    Seq<Block> returnArray = new Seq<>(), returnArray2 = new Seq<>();
     Seq<Category> returnCatArray = new Seq<>();
     boolean[] categoryEmpty = new boolean[Category.all.length];
     ObjectMap<Category,Block> selectedBlocks = new ObjectMap<>();
@@ -93,7 +95,7 @@ public class PlacementFragment extends Fragment{
 
         if(Core.input.keyDown(Binding.pick) && player.isBuilder()){ //mouse eyedropper select
             Building tile = world.buildWorld(Core.input.mouseWorld().x, Core.input.mouseWorld().y);
-            Block tryRecipe = tile == null ? null : tile.block();
+            Block tryRecipe = tile == null ? null : tile.block instanceof ConstructBlock ? ((ConstructBuild)tile).cblock : tile.block;
             Object tryConfig = tile == null ? null : tile.config();
 
             for(BuildPlan req : player.builder().plans()){
@@ -420,7 +422,7 @@ public class PlacementFragment extends Fragment{
     }
 
     Seq<Block> getUnlockedByCategory(Category cat){
-        return returnArray.selectFrom(content.blocks(), block -> block.category == cat && block.isVisible() && unlocked(block)).sort((b1, b2) -> Boolean.compare(!b1.isPlaceable(), !b2.isPlaceable()));
+        return returnArray2.selectFrom(content.blocks(), block -> block.category == cat && block.isVisible() && unlocked(block)).sort((b1, b2) -> Boolean.compare(!b1.isPlaceable(), !b2.isPlaceable()));
     }
 
     Block getSelectedBlock(Category cat){

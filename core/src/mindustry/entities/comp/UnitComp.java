@@ -5,12 +5,14 @@ import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.math.geom.*;
 import arc.scene.ui.layout.*;
+import arc.struct.*;
 import arc.util.ArcAnnotate.*;
 import arc.util.*;
 import mindustry.annotations.Annotations.*;
 import mindustry.content.*;
 import mindustry.ctype.*;
 import mindustry.entities.*;
+import mindustry.entities.abilities.*;
 import mindustry.entities.units.*;
 import mindustry.game.EventType.*;
 import mindustry.game.*;
@@ -31,12 +33,13 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     @Import float x, y, rotation, elevation, maxHealth, drag, armor, hitSize, health;
     @Import boolean dead;
     @Import Team team;
+    @Import int id;
 
     private UnitController controller;
     private UnitType type;
-    boolean spawnedByCore, deactivated;
+    boolean spawnedByCore, deactivated; //TODO remove deactivation boolean
 
-    transient float timer1, timer2;
+    transient Seq<Ability> abilities = new Seq<>(0);
 
     public void moveAt(Vec2 vector){
         moveAt(vector, type.accel);
@@ -66,15 +69,18 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
     @Replace
     public float clipSize(){
-        return type.region.getWidth() * 2f;
+        return type.region.width * 2f;
     }
 
     @Override
     public double sense(LAccess sensor){
         if(sensor == LAccess.totalItems) return stack().amount;
+        if(sensor == LAccess.rotation) return rotation;
         if(sensor == LAccess.health) return health;
+        if(sensor == LAccess.maxHealth) return maxHealth;
         if(sensor == LAccess.x) return x;
         if(sensor == LAccess.y) return y;
+        if(sensor == LAccess.team) return team.id;
         if(sensor == LAccess.shooting) return isShooting() ? 1 : 0;
         if(sensor == LAccess.shootX) return aimX();
         if(sensor == LAccess.shootY) return aimY();
@@ -82,9 +88,22 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     }
 
     @Override
+    public Object senseObject(LAccess sensor){
+        if(sensor == LAccess.type) return type;
+
+        return noSensed;
+    }
+
+    @Override
     public double sense(Content content){
         if(content == stack().item) return stack().amount;
         return 0;
+    }
+
+    @Override
+    @Replace
+    public boolean canDrown(){
+        return isGrounded() && !hovering && type.canDrown && !(this instanceof WaterMovec);
     }
 
     @Override
@@ -100,7 +119,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     @Override
     public void controller(UnitController next){
         this.controller = next;
-        if(controller.unit() != base()) controller.unit(base());
+        if(controller.unit() != self()) controller.unit(self());
     }
 
     @Override
@@ -154,7 +173,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         return Units.getCap(team);
     }
 
-    private void setStats(UnitType type){
+    public void setStats(UnitType type){
         this.type = type;
         this.maxHealth = type.health;
         this.drag = type.drag;
@@ -164,13 +183,16 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
         if(controller == null) controller(type.createController());
         if(mounts().length != type.weapons.size) setupWeapons(type);
+        if(abilities.size != type.abilities.size){
+            abilities = type.abilities.map(Ability::copy);
+        }
     }
 
     @Override
     public void afterSync(){
         //set up type info after reading
         setStats(this.type);
-        controller.unit(base());
+        controller.unit(self());
     }
 
     @Override
@@ -182,20 +204,21 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
     @Override
     public void add(){
-        teamIndex.updateCount(team, type, 1);
 
         //check if over unit cap
         if(count() > cap() && !spawnedByCore){
             deactivated = true;
-        }else{
-            teamIndex.updateActiveCount(team, type, 1);
+
+            if(!dead){
+                Call.unitCapDeath(self());
+            }
         }
     }
 
     @Override
     public void remove(){
         teamIndex.updateCount(team, type, -1);
-        controller.removed(base());
+        controller.removed(self());
     }
 
     @Override
@@ -204,7 +227,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
             Effect.shake(type.landShake, type.landShake, this);
         }
 
-        type.landed(base());
+        type.landed(self());
     }
 
     @Override
@@ -215,13 +238,23 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
             deactivated = false;
         }
 
-        if(!deactivated) type.update(base());
+        if(!deactivated){
+            type.update(self());
+
+            if(abilities.size > 0){
+                for(Ability a : abilities){
+                    a.update(self());
+                }
+            }
+        }else if(!dead){
+            Call.unitCapDeath(self());
+        }
 
         drag = type.drag * (isGrounded() ? (floorOn().dragMultiplier) : 1f);
 
         //apply knockback based on spawns
         if(team != state.rules.waveTeam){
-            float relativeSize = state.rules.dropZoneRadius + bounds()/2f + 1f;
+            float relativeSize = state.rules.dropZoneRadius + hitSize/2f + 1f;
             for(Tile spawn : spawner.getSpawns()){
                 if(within(spawn.worldx(), spawn.worldy(), relativeSize)){
                     vel().add(Tmp.v1.set(this).sub(spawn.worldx(), spawn.worldy()).setLength(0.1f + 1f - dst(spawn) / relativeSize).scl(0.45f * Time.delta));
@@ -230,7 +263,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         }
 
         //simulate falling down
-        if(dead){
+        if(dead || health <= 0){
             //less drag when dead
             drag = 0.01f;
 
@@ -265,7 +298,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         if(tile != null && isGrounded() && !type.hovering){
             //unit block update
             if(tile.build != null){
-                tile.build.unitOn(base());
+                tile.build.unitOn(self());
             }
 
             //apply damage
@@ -273,10 +306,10 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
                 damageContinuous(floor.damageTaken);
             }
 
-            if(!net.client() && tile.solid()){
+            if(tile.solid()){
                 if(type.canBoost){
                     elevation = 1f;
-                }else{
+                }else if(!net.client()){
                     kill();
                 }
             }
@@ -299,7 +332,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
         //remove units spawned by the core
         if(spawnedByCore && !isPlayer()){
-            Call.unitDespawn(base());
+            Call.unitDespawn(self());
         }
     }
 
@@ -310,9 +343,9 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
     /** Actually destroys the unit, removing it and creating explosions. **/
     public void destroy(){
-        float explosiveness = 2f + item().explosiveness * stack().amount;
-        float flammability = item().flammability * stack().amount;
-        Damage.dynamicExplosion(x, y, flammability, explosiveness, 0f, bounds() / 2f, Pal.darkFlame);
+        float explosiveness = 2f + item().explosiveness * stack().amount / 2f;
+        float flammability = item().flammability * stack().amount / 2f;
+        Damage.dynamicExplosion(x, y, flammability, explosiveness, 0f, bounds() / 2f, Pal.darkFlame, state.rules.damageExplosions);
 
         float shake = hitSize / 3f;
 
@@ -321,7 +354,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         Effect.shake(shake, shake, this);
         type.deathSound.at(this);
 
-        Events.fire(new UnitDestroyEvent(base()));
+        Events.fire(new UnitDestroyEvent(self()));
 
         if(explosiveness > 7f && isLocal()){
             Events.fire(Trigger.suicideBomb);
@@ -347,7 +380,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
     @Override
     public void display(Table table){
-        type.display(base(), table);
+        type.display(self(), table);
     }
 
     @Override
@@ -357,7 +390,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
     @Override
     public void draw(){
-        type.draw(base());
+        type.draw(self());
     }
 
     @Override
@@ -387,6 +420,6 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         if(dead || net.client()) return;
 
         //deaths are synced; this calls killed()
-        Call.unitDeath(base());
+        Call.unitDeath(id);
     }
 }

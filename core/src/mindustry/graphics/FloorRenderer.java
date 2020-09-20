@@ -210,8 +210,8 @@ public class FloorRenderer implements Disposable{
                     tile.block().drawBase(tile);
                 }else if(floor.cacheLayer == layer && (world.isAccessible(tile.x, tile.y) || tile.block().cacheLayer != CacheLayer.walls || !tile.block().fillsTile)){
                     floor.drawBase(tile);
-                }else if(floor.cacheLayer.ordinal() < layer.ordinal() && layer != CacheLayer.walls){
-                    floor.drawNonLayer(tile);
+                }else if(floor.cacheLayer != layer && layer != CacheLayer.walls){
+                    floor.drawNonLayer(tile, layer);
                 }
             }
         }
@@ -228,7 +228,7 @@ public class FloorRenderer implements Disposable{
         int chunksx = Mathf.ceil((float)(world.width()) / chunksize),
         chunksy = Mathf.ceil((float)(world.height()) / chunksize);
         cache = new Chunk[chunksx][chunksy];
-        cbatch = new MultiCacheBatch(chunksize * chunksize * 5);
+        cbatch = new MultiCacheBatch(chunksize * chunksize * 7);
 
         Time.mark();
 
@@ -256,5 +256,8 @@ public class FloorRenderer implements Disposable{
         /** Maps cache layer ID to cache ID in the batch.
          * -1 means that this cache is unoccupied. */
         int[] caches = new int[CacheLayer.all.length];
+
+        Chunk(){
+        }
     }
 }

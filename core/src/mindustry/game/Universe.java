@@ -14,7 +14,8 @@ import static mindustry.Vars.*;
 
 /** Updates and handles state of the campaign universe. Has no relevance to other gamemodes. */
 public class Universe{
-    private long seconds;
+    private int seconds;
+    private int netSeconds;
     private float secondCounter;
     private int turn;
 
@@ -55,23 +56,40 @@ public class Universe{
 
     public void displayTimeEnd(){
         if(!headless){
-            state.set(State.paused);
+            //check if any sectors are under attack to display this
+            Seq<Sector> attacked = state.getSector().planet.sectors.select(s -> s.hasWaves() && s.hasBase() && !s.isBeingPlayed() && s.getSecondsPassed() > 1);
 
-            ui.announce("Next turn incoming.");
+            if(attacked.any()){
+                state.set(State.paused);
+
+                //TODO localize
+                String text = attacked.size > 1 ? attacked.size + " sectors attacked." : "Sector " + attacked.first().id + " under attack.";
+
+                ui.hudfrag.sectorText = text;
+                ui.hudfrag.attackedSectors = attacked;
+                ui.announce(text);
+            }else{
+                //autorun next turn
+                universe.runTurn();
+            }
         }
     }
 
     /** Update planet rotations, global time and relevant state. */
     public void update(){
-        secondCounter += Time.delta / 60f;
 
-        if(secondCounter >= 1){
-            seconds += (int)secondCounter;
-            secondCounter %= 1f;
+        //only update time when not in multiplayer
+        if(!net.client()){
+            secondCounter += Time.delta / 60f;
 
-            //save every few seconds
-            if(seconds % 10 == 1){
-                save();
+            if(secondCounter >= 1){
+                seconds += (int)secondCounter;
+                secondCounter %= 1f;
+
+                //save every few seconds
+                if(seconds % 10 == 1){
+                    save();
+                }
             }
         }
 
@@ -140,7 +158,7 @@ public class Universe{
                         sector.setSecondsPassed(sector.getSecondsPassed() + actuallyPassed);
 
                         //check if the sector has been attacked too many times...
-                        if(sector.hasBase() && sector.getSecondsPassed() * 60f > turnDuration * sectorDestructionTurns){
+                        if(sector.hasBase() && sector.hasWaves() && sector.getSecondsPassed() * 60f > turnDuration * sectorDestructionTurns){
                             //fire event for losing the sector
                             Events.fire(new SectorLoseEvent(sector));
 
@@ -178,25 +196,30 @@ public class Universe{
         return count;
     }
 
-    public float secondsMod(float mod, float scale){
-        return (seconds / scale) % mod;
+    public void updateNetSeconds(int value){
+        netSeconds = value;
     }
 
-    public long seconds(){
-        return seconds;
+    public float secondsMod(float mod, float scale){
+        return (seconds() / scale) % mod;
+    }
+
+    public int seconds(){
+        //use networked seconds when playing as client
+        return net.client() ? netSeconds : seconds;
     }
 
     public float secondsf(){
-        return seconds + secondCounter;
+        return seconds() + secondCounter;
     }
 
     private void save(){
-        Core.settings.put("utime", seconds);
+        Core.settings.put("utimei", seconds);
         Core.settings.put("turn", turn);
     }
 
     private void load(){
-        seconds = Core.settings.getLong("utime");
+        seconds = Core.settings.getInt("utimei");
         turn = Core.settings.getInt("turn");
     }
 

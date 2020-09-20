@@ -68,7 +68,7 @@ public class JsonIO{
         return json.prettyPrint(in);
     }
 
-    private static void apply(Json json){
+    static void apply(Json json){
         json.setIgnoreUnknownFields(true);
         json.setElementType(Rules.class, "spawns", SpawnGroup.class);
         json.setElementType(Rules.class, "loadout", ItemStack.class);
@@ -97,6 +97,20 @@ public class JsonIO{
             @Override
             public SectorPreset read(Json json, JsonValue jsonData, Class type){
                 return Vars.content.getByName(ContentType.sector, jsonData.asString());
+            }
+        });
+
+        json.setSerializer(Liquid.class, new Serializer<Liquid>(){
+            @Override
+            public void write(Json json, Liquid object, Class knownType){
+                json.writeValue(object.name);
+            }
+
+            @Override
+            public Liquid read(Json json, JsonValue jsonData, Class type){
+                if(jsonData.asString() == null) return Liquids.water;
+                Liquid i =  Vars.content.getByName(ContentType.liquid, jsonData.asString());
+                return i == null ? Liquids.water : i;
             }
         });
 
@@ -163,6 +177,21 @@ public class JsonIO{
             @Override
             public ItemStack read(Json json, JsonValue jsonData, Class type){
                 return new ItemStack(json.getSerializer(Item.class).read(json, jsonData.get("item"), Item.class), jsonData.getInt("amount"));
+            }
+        });
+
+        json.setSerializer(UnlockableContent.class, new Serializer<UnlockableContent>(){
+            @Override
+            public void write(Json json, UnlockableContent object, Class knownType){
+                json.writeValue(object.name);
+            }
+
+            @Override
+            public UnlockableContent read(Json json, JsonValue jsonData, Class type){
+                String str = jsonData.asString();
+                Item item = Vars.content.getByName(ContentType.item, str);
+                Liquid liquid = Vars.content.getByName(ContentType.liquid, str);
+                return item != null ? item : liquid;
             }
         });
     }

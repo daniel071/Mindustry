@@ -74,9 +74,10 @@ public abstract class Turret extends Block{
     public @Load("block-@size") TextureRegion baseRegion;
     public @Load("@-heat") TextureRegion heatRegion;
 
-    public Cons<TurretEntity> drawer = tile -> Draw.rect(region, tile.x + tr2.x, tile.y + tr2.y, tile.rotation - 90);
-    public Cons<TurretEntity> heatDrawer = tile -> {
+    public Cons<TurretBuild> drawer = tile -> Draw.rect(region, tile.x + tr2.x, tile.y + tr2.y, tile.rotation - 90);
+    public Cons<TurretBuild> heatDrawer = tile -> {
         if(tile.heat <= 0.00001f) return;
+
         Draw.color(heatColor, tile.heat);
         Draw.blend(Blending.additive);
         Draw.rect(heatRegion, tile.x + tr2.x, tile.y + tr2.y, tile.rotation - 90);
@@ -141,7 +142,7 @@ public abstract class Turret extends Block{
         public abstract BulletType type();
     }
 
-    public class TurretEntity extends Building implements ControlBlock, Ranged{
+    public class TurretBuild extends Building implements ControlBlock, Ranged{
         public Seq<AmmoEntry> ammo = new Seq<>();
         public int totalAmmo;
         public float reload, rotation = 90, recoil, heat, logicControlTime = -1;
@@ -175,6 +176,7 @@ public abstract class Turret extends Block{
 
         @Override
         public double sense(LAccess sensor){
+            if(sensor == LAccess.rotation) return rotation;
             if(sensor == LAccess.shootX) return targetPos.x;
             if(sensor == LAccess.shootY) return targetPos.y;
             if(sensor == LAccess.shooting) return (isControlled() ? unit.isShooting() : logicControlled() ? logicShooting : validateTarget()) ? 1 : 0;
@@ -435,7 +437,7 @@ public abstract class Turret extends Block{
         public void read(Reads read, byte revision){
             super.read(read, revision);
 
-            if(revision == 1){
+            if(revision >= 1){
                 reload = read.f();
                 rotation = read.f();
             }

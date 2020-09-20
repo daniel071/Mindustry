@@ -35,6 +35,7 @@ public class Conduit extends LiquidBlock implements Autotiler{
         solid = false;
         floating = true;
         conveyorPlacement = true;
+        noUpdateDisabled = true;
     }
 
     @Override
@@ -64,7 +65,7 @@ public class Conduit extends LiquidBlock implements Autotiler{
 
     @Override
     public boolean blends(Tile tile, int rotation, int otherx, int othery, int otherrot, Block otherblock){
-        return otherblock.hasLiquids && otherblock.outputsLiquid && lookingAtEither(tile, rotation, otherx, othery, otherrot, otherblock);
+        return otherblock.hasLiquids && (otherblock.outputsLiquid || (lookingAt(tile, rotation, otherx, othery, otherblock))) && lookingAtEither(tile, rotation, otherx, othery, otherrot, otherblock);
     }
 
     @Override
@@ -72,7 +73,7 @@ public class Conduit extends LiquidBlock implements Autotiler{
         return new TextureRegion[]{Core.atlas.find("conduit-bottom"), topRegions[0]};
     }
 
-    public class ConduitEntity extends LiquidBlockEntity{
+    public class ConduitBuild extends LiquidBuild{
         public float smoothLiquid;
         public int blendbits, xscl, yscl, blending;
 

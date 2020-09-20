@@ -15,6 +15,7 @@ public enum LAccess{
     powerNetIn,
     powerNetOut,
     health,
+    maxHealth,
     heat,
     efficiency,
     rotation,
@@ -23,10 +24,12 @@ public enum LAccess{
     shootX,
     shootY,
     shooting,
+    team,
+    type,
 
     //values with parameters are considered controllable
     enabled("to"), //"to" is standard for single parameter access
-    shoot("x", "y", "shoot");
+    shoot("x", "y", "shoot"),;
 
     public final String[] parameters;
 

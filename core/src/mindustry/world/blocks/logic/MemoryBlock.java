@@ -10,9 +10,10 @@ public class MemoryBlock extends Block{
     public MemoryBlock(String name){
         super(name);
         destructible = true;
+        solid = true;
     }
 
-    public class MemoryEntity extends Building{
+    public class MemoryBuild extends Building{
         public double[] memory = new double[memoryCapacity];
 
         @Override
