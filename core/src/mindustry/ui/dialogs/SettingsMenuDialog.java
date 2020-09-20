@@ -207,13 +207,13 @@ public class SettingsMenuDialog extends SettingsDialog{
         sound.sliderPref("ambientvol", bundle.get("setting.ambientvol.name", "Ambient Volume"), 100, 0, 100, 1, i -> i + "%");
 
         game.screenshakePref();
-        if(mobile){
-            game.checkPref("autotarget", true);
-            game.checkPref("keyboard", false, val -> control.setInput(val ? new DesktopInput() : new MobileInput()));
-            if(Core.settings.getBool("keyboard")){
-                control.setInput(new DesktopInput());
-            }
+
+        game.checkPref("autotarget", true);
+        game.checkPref("keyboard", false, val -> control.setInput(val ? new DesktopInput() : new MobileInput()));
+        if(Core.settings.getBool("keyboard")){
+            control.setInput(new DesktopInput());
         }
+
         //the issue with touchscreen support on desktop is that:
         //1) I can't test it
         //2) the SDL backend doesn't support multitouch
