@@ -1,12 +1,6 @@
 ![Logo](core/assets-raw/sprites/ui/logo.png)
 
-[![Build Status](https://travis-ci.org/Anuken/Mindustry.svg?branch=master)](https://travis-ci.org/Anuken/Mindustry) 
-[![Discord](https://img.shields.io/discord/391020510269669376.svg)](https://discord.gg/mindustry)  
-
 This is a custom client of a sandbox tower defense game written in Java. It is based of https://github.com/hellomouse/Mindustry/tree/antigrief and has several extra customisations such as colourful shields and toggleable rendering of ambient light.
-
-_[Trello Board](https://trello.com/b/aE2tcUwF/mindustry-40-plans)_  
-_[Wiki](https://mindustrygame.github.io/wiki)_ 
 
 ## Downloads
 You can find pre-compiled binaries in the [releases page](https://github.com/daniel071/Mindustry/releases). You can also download the source code and compile on your own (see instructions below). 
