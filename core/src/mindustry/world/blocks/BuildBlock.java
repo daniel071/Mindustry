@@ -128,6 +128,7 @@ public class BuildBlock extends Block{
     @Override
     public TextureRegion getDisplayIcon(Tile tile){
         BuildEntity entity = tile.ent();
+        if (entity.cblock == null && entity.previous == null) return Core.assets.get("sprites/error.png");
         return (entity.cblock == null ? entity.previous : entity.cblock).icon(mindustry.ui.Cicon.full);
     }
 

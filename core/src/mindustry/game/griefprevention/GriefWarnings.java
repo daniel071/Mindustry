@@ -10,6 +10,7 @@ import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.entities.type.Player;
+import mindustry.entities.type.TileEntity;
 import mindustry.entities.type.Unit;
 import mindustry.game.EventType.DepositEvent;
 import mindustry.game.EventType.ResetEvent;
@@ -121,7 +122,9 @@ public class GriefWarnings {
     }
 
     public float getDistanceToCore(Unit unit, float x, float y) {
-        Tile nearestCore = unit.getClosestCore().getTile();
+        TileEntity nearestCoreEntity = unit.getClosestCore();
+        if (nearestCoreEntity == null) return Float.POSITIVE_INFINITY;
+        Tile nearestCore = nearestCoreEntity.getTile();
         return Mathf.dst(x, y, nearestCore.x, nearestCore.y);
     }
 
